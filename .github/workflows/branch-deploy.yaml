@@ -16,11 +16,18 @@ jobs:
     name: deploy
     runs-on: ubuntu-latest
     if: ${{ github.event.issue.pull_request }}
-    environment: live
+    environment:
+      name: live
+      deployment: false
+    env:
+      TG_NO_COLOR: "true"
+      TG_NON_INTERACTIVE: "true"
     steps:
       - name: branch-deploy
         id: branch-deploy
         uses: github/branch-deploy@f0984057ffe1aa340aa017b6eafb894310aed88e # v12.0.0
+        with:
+          environment: live
 
       - name: Checkout
         if: steps.branch-deploy.outputs.continue == 'true'
@@ -39,7 +46,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_STATE_S3_ACCESS_KEY: ${{ secrets.CLOUDFLARE_STATE_S3_ACCESS_KEY }}
           CLOUDFLARE_STATE_S3_ACCESS_SECRET: ${{ secrets.CLOUDFLARE_STATE_S3_ACCESS_SECRET }}
-        run: terragrunt run --all -- plan -no-color
+        run: terragrunt run --all -- plan
         continue-on-error: true
 
       - name: Terragrunt apply
@@ -49,7 +56,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_STATE_S3_ACCESS_KEY: ${{ secrets.CLOUDFLARE_STATE_S3_ACCESS_KEY }}
           CLOUDFLARE_STATE_S3_ACCESS_SECRET: ${{ secrets.CLOUDFLARE_STATE_S3_ACCESS_SECRET }}
-        run: terragrunt run --all -- apply -no-color
+        run: terragrunt run --all -- apply
         continue-on-error: true
 
       - name: Terraform plan output
