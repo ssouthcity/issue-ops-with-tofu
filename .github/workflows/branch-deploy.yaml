@@ -1,0 +1,87 @@
+name: branch-deploy
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  pull-requests: write
+  deployments: write
+  contents: write
+  checks: read
+  statuses: read
+
+jobs:
+  deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request }}
+    environment: live
+    steps:
+      - name: branch-deploy
+        id: branch-deploy
+        uses: github/branch-deploy@f0984057ffe1aa340aa017b6eafb894310aed88e # v12.0.0
+
+      - name: Checkout
+        if: steps.branch-deploy.outputs.continue == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.branch-deploy.outputs.sha }}
+          persist-credentials: false
+
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        if: steps.branch-deploy.outputs.continue == 'true'
+
+      - name: Terragrunt plan
+        if: ${{ steps.branch-deploy.outputs.continue == 'true' && steps.branch-deploy.outputs.noop == 'true' }}
+        id: plan
+        run: terragrunt run --all -- plan -no-color
+        continue-on-error: true
+
+      - name: Terragrunt apply
+        if: ${{ steps.branch-deploy.outputs.continue == 'true' && steps.branch-deploy.outputs.noop != 'true' }}
+        id: apply
+        run: terragrunt run --all -- apply -no-color
+        continue-on-error: true
+
+      - name: Terraform plan output
+        if: ${{ steps.branch-deploy.outputs.continue == 'true' && steps.branch-deploy.outputs.noop == 'true' }}
+        env:
+          TF_STDOUT: ${{ steps.plan.outputs.stdout }}
+        run: |
+          delimiter="branch_deploy_$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
+          while printf '%s\n' "$TF_STDOUT" | grep -Fxq "$delimiter"; do
+            delimiter="branch_deploy_$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
+          done
+          {
+            printf 'DEPLOY_MESSAGE<<%s\n' "$delimiter"
+            printf '%s\n' '```terraform'
+            printf '%s\n' "$TF_STDOUT"
+            printf '%s\n' '```'
+            printf '%s\n' "$delimiter"
+          } >> "$GITHUB_ENV"
+
+      - name: Terraform apply output
+        if: ${{ steps.branch-deploy.outputs.continue == 'true' && steps.branch-deploy.outputs.noop != 'true' }}
+        env:
+          TF_STDOUT: ${{ steps.apply.outputs.stdout }}
+        run: |
+          delimiter="branch_deploy_$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
+          while printf '%s\n' "$TF_STDOUT" | grep -Fxq "$delimiter"; do
+            delimiter="branch_deploy_$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
+          done
+          {
+            printf 'DEPLOY_MESSAGE<<%s\n' "$delimiter"
+            printf '%s\n' '```terraform'
+            printf '%s\n' "$TF_STDOUT"
+            printf '%s\n' '```'
+            printf '%s\n' "$delimiter"
+          } >> "$GITHUB_ENV"
+
+      - name: Check Terraform plan output
+        if: ${{ steps.branch-deploy.outputs.continue == 'true' && steps.branch-deploy.outputs.noop == 'true' && steps.plan.outcome == 'failure' }}
+        run: exit 1
+
+      - name: Check Terraform apply output
+        if: ${{ steps.branch-deploy.outputs.continue == 'true' && steps.branch-deploy.outputs.noop != 'true' && steps.apply.outcome == 'failure' }}
+        run: exit 1
