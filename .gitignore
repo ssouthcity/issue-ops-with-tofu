@@ -1,0 +1,9 @@
+# Secrets
+.env
+
+# Terragrunt
+.terragrunt-stack
+.terragrunt-cache
+
+# Terraform/tofu
+.terraform.lock.hcl
