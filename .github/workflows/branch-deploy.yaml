@@ -46,7 +46,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_STATE_S3_ACCESS_KEY: ${{ secrets.CLOUDFLARE_STATE_S3_ACCESS_KEY }}
           CLOUDFLARE_STATE_S3_ACCESS_SECRET: ${{ secrets.CLOUDFLARE_STATE_S3_ACCESS_SECRET }}
-        run: terragrunt run --all -- plan
+        run: terragrunt run --all -- plan | tee "$RUNNER_TEMP/terragrunt-stdout.txt"
         continue-on-error: true
 
       - name: Terragrunt apply
@@ -56,13 +56,11 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_STATE_S3_ACCESS_KEY: ${{ secrets.CLOUDFLARE_STATE_S3_ACCESS_KEY }}
           CLOUDFLARE_STATE_S3_ACCESS_SECRET: ${{ secrets.CLOUDFLARE_STATE_S3_ACCESS_SECRET }}
-        run: terragrunt run --all -- apply
+        run: terragrunt run --all -- apply | tee "$RUNNER_TEMP/terragrunt-stdout.txt"
         continue-on-error: true
 
-      - name: Terraform plan output
-        if: ${{ steps.branch-deploy.outputs.continue == 'true' && steps.branch-deploy.outputs.noop == 'true' }}
-        env:
-          TF_STDOUT: ${{ steps.plan.outputs.stdout }}
+      - name: Terragrunt output
+        if: ${{ steps.branch-deploy.outputs.continue == 'true' }}
         run: |
           delimiter="branch_deploy_$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
           while printf '%s\n' "$TF_STDOUT" | grep -Fxq "$delimiter"; do
@@ -71,24 +69,7 @@ jobs:
           {
             printf 'DEPLOY_MESSAGE<<%s\n' "$delimiter"
             printf '%s\n' '```terraform'
-            printf '%s\n' "$TF_STDOUT"
-            printf '%s\n' '```'
-            printf '%s\n' "$delimiter"
-          } >> "$GITHUB_ENV"
-
-      - name: Terraform apply output
-        if: ${{ steps.branch-deploy.outputs.continue == 'true' && steps.branch-deploy.outputs.noop != 'true' }}
-        env:
-          TF_STDOUT: ${{ steps.apply.outputs.stdout }}
-        run: |
-          delimiter="branch_deploy_$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
-          while printf '%s\n' "$TF_STDOUT" | grep -Fxq "$delimiter"; do
-            delimiter="branch_deploy_$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
-          done
-          {
-            printf 'DEPLOY_MESSAGE<<%s\n' "$delimiter"
-            printf '%s\n' '```terraform'
-            printf '%s\n' "$TF_STDOUT"
+            cat "$RUNNER_TEMP/terragrunt-stdout.txt"
             printf '%s\n' '```'
             printf '%s\n' "$delimiter"
           } >> "$GITHUB_ENV"
