@@ -40,3 +40,24 @@ jobs:
         with:
           issue-form-template: new-bucket.yaml
           parsed-issue-body: ${{ steps.parse.outputs.json }}
+
+      - if: steps.validate.outputs.result == 'success'
+        name: Add Validated Label
+        id: add-label
+        uses: issue-ops/labeler@9210b145e254445abdbfd33099941e7637d56d4e # v4.0.0
+        with:
+          action: add
+          labels: |
+            issueops:validated
+
+      - if: steps.validate.outputs.result == 'success'
+        name: Notify Requester
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          cat <<-EOF | gh issue comment "$ISSUE_NUMBER" -F -
+            Hello! Your request has been validated successfully!
+
+            Please comment with `.submit` to submit this request.
+          EOF
