@@ -59,7 +59,7 @@ jobs:
         env:
           BUCKET_NAME: ${{ steps.parse.outputs.parsed_bucket_name }}
         run: |
-          UNIT_DIR="accounts/ssouthcity/buckets/$BUCKET_NAME"
+          UNIT_DIR="accounts/southcity/buckets/$BUCKET_NAME"
 
           terragrunt scaffold github.com/ssouthcity/issue-ops-with-tofu//units/cloudflare-r2-bucket \
             --output-folder "$UNIT_DIR" \
