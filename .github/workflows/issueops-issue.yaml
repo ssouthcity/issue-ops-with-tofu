@@ -18,6 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     if: contains(github.event.issue.labels.*.name, 'issueops:new-bucket')
     steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
       - name: Remove Labels
         uses: issue-ops/labeler@9210b145e254445abdbfd33099941e7637d56d4e # v4.0.0
         with:
