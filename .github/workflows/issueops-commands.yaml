@@ -73,12 +73,13 @@ jobs:
         name: Commit and push
         env:
           BUCKET_NAME: ${{ steps.parse.outputs.parsed_bucket_name }}
+          HEAD: ${{ steps.create-branch.outputs.name }}
           COMMIT_MESSAGE: |
             Scaffolded code for issue #${{ github.event.issue.number }}
         run: |
           git add .
           git commit -m "$COMMIT_MESSAGE"
-          git push
+          git push origin "$HEAD"
 
       - if: steps.command.outputs.continue == 'true'
         name: Open PR
