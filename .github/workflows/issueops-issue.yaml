@@ -38,6 +38,7 @@ jobs:
         id: validate
         uses: issue-ops/validator@3aec708c72ec4cb8dfca562d4addad3e78e55e26 # v4.0.0
         with:
+          add-comment: false
           issue-form-template: new-bucket.yaml
           parsed-issue-body: ${{ steps.parse.outputs.json }}
 
@@ -55,9 +56,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
-        run: |
-          cat <<-EOF | gh issue comment "$ISSUE_NUMBER" -F -
+          COMMENT_BODY: |
             Hello! Your request has been validated successfully!
 
             Please comment with `.submit` to submit this request.
-          EOF
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --body "$COMMENT_BODY"
