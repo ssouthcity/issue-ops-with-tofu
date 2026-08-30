@@ -1,0 +1,17 @@
+name: New Bucket Request
+description: Submit an request for a new bucket.
+title: "[Request] New Bucket: NAME"
+labels:
+  - issueops:new-bucket
+body:
+  - type: markdown
+    attributes:
+      value: This is the form for ordering the creation of a bucket.
+  - type: input
+    id: bucket_name
+    attributes:
+      label: Bucket Name
+      description: The name of the bucket.
+      placeholder: mybucket
+    validations:
+      required: true

@@ -1,0 +1,39 @@
+name: issueops-issue
+
+on:
+  issues:
+    types:
+      - opened
+      - edited
+      - reopened
+
+permissions:
+  contents: read
+  id-token: write
+  issues: write
+
+jobs:
+  new-bucket-request:
+    name: New Bucket Request
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'issueops:new-bucket')
+    steps:
+      - name: Remove Labels
+        uses: issue-ops/labeler@9210b145e254445abdbfd33099941e7637d56d4e # v4.0.0
+        with:
+          action: remove
+          labels: |
+            issueops:validated
+
+      - name: Parse Issue Body
+        id: parse
+        uses: issue-ops/parser@cb7e2e4e5da701aad0e23e718bc4c91d442ca8ba # v5.0.0
+        with:
+          issue-form-template: new-bucket.yaml
+
+      - name: Validate Request
+        id: validate
+        uses: issue-ops/validator@3aec708c72ec4cb8dfca562d4addad3e78e55e26 # v4.0.0
+        with:
+          issue-form-template: new-bucket.yaml
+          parsed-issue-body: ${{ steps.parse.outputs.json }}
