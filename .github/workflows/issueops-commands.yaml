@@ -1,0 +1,92 @@
+name: issueops-commands
+
+on:
+  issue_comment:
+    types:
+      - created
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  new-bucket-request-submit:
+    name: New Bucket Request Submit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: github/command@3442f3fa1efe01bdb024b157083c337902d17372 # v2.0.3
+        id: command
+        with:
+          command: .submit
+          allowed_contexts: issue
+
+      - if: steps.command.outputs.continue == 'true'
+        name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - if: steps.branch-deploy.outputs.continue == 'true'
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          install_args: >
+            terragrunt
+
+      - if: steps.command.outputs.continue == 'true'
+        name: Parse Issue Body
+        id: parse
+        uses: issue-ops/parser@cb7e2e4e5da701aad0e23e718bc4c91d442ca8ba # v5.0.0
+        with:
+          issue-form-template: new-bucket.yaml
+
+      - if: steps.command.outputs.continue == 'true'
+        name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - if: steps.command.outputs.continue == 'true'
+        name: Create branch
+        id: create-branch
+        env:
+          BUCKET_NAME: ${{ steps.parse.outputs.parsed_bucket_name }}
+        run: |
+          BRANCH="issueops/new-bucket-request/$BUCKET_NAME"
+          git switch -c "$BRANCH"
+          echo "name=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - if: steps.command.outputs.continue == 'true'
+        name: Scaffold code
+        env:
+          BUCKET_NAME: ${{ steps.parse.outputs.parsed_bucket_name }}
+        run: |
+          UNIT_DIR="accounts/ssouthcity/buckets/$BUCKET_NAME"
+
+          terragrunt scaffold git::github.com:ssouthcity/issue-ops-with-tofu//units/cloudflare-r2-bucket \
+            --output-folder "$UNIT_DIR"
+
+          cat <<-EOF > "$UNIT_DIR/terragrunt.values.hcl"
+            name = "$BUCKET_NAME"
+          EOF
+
+      - if: steps.command.outputs.continue == 'true'
+        name: Commit and push
+        env:
+          BUCKET_NAME: ${{ steps.parse.outputs.parsed_bucket_name }}
+          COMMIT_MESSAGE: |
+            Scaffolded code for issue #${{ github.event.issue.number }}
+        run: |
+          git add .
+          git commit -m "$COMMIT_MESSAGE"
+          git push
+
+      - if: steps.command.outputs.continue == 'true'
+        name: Open PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD: ${{ steps.create-branch.outputs.name }}
+          TITLE: |
+            [Request] New Bucket: ${{ steps.parse.outputs.parsed_bucket_name }}
+          BODY: |
+            Closes #${{ github.event.issue.number }}
+        run: |
+          gh pr create --head "$HEAD" --title "$TITLE" --body "$BODY"
