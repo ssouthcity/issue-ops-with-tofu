@@ -24,6 +24,10 @@ inputs:
     description: "HTML comment used to identity the comment when updating"
     required: true
     default: "<!-- sticky-comment: workflow=${{ github.workflow }} -->"
+outputs:
+  comment-id:
+    description: "ID of the comment"
+    value: ${{ steps.create_comment.outputs.comment_id || steps.update_comment.outputs.comment_id }}
 runs:
   using: "composite"
   steps:
@@ -50,7 +54,8 @@ runs:
         MARKER: ${{ inputs.marker }}
       run: echo "result=$BODY\n\n$MARKER" >> "$GITHUB_OUTPUT"
 
-    - if: steps.get_existing_comment.outputs.comment_id == ""
+    - if: ${{ steps.get_existing_comment.outputs.comment_id == "" }}
+      id: create_comment
       name: Create Comment
       shell: bash
       env:
@@ -66,7 +71,8 @@ runs:
           --raw-field body="$BODY" \
           --jq '.id'
 
-    - if: steps.get_existing_comment.outputs.comment_id != ""
+    - if: ${{ steps.get_existing_comment.outputs.comment_id != "" }}
+      id: update_comment
       name: Update Comment
       shell: bash
       env:
