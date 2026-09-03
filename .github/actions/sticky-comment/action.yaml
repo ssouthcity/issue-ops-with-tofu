@@ -1,0 +1,81 @@
+name: "Sticky Comment"
+description: "Create or update a comment on a GitHub issue or PR"
+inputs:
+  issue-number:
+    description: "ID of the issue to comment on"
+    required: true
+    default: ${{ github.event.issue.number }}
+  body:
+    description: "Comment body"
+    required: true
+  token:
+    description: "GitHub token"
+    required: true
+    default: ${{ github.token }}
+  owner:
+    description: "Owner of the repo"
+    required: true
+    default: ${{ github.context.repo.owner }}
+  repo:
+    description: "Name of the repo"
+    required: true
+    default: ${{ github.context.repo.repo }}
+  marker:
+    description: "HTML comment used to identity the comment when updating"
+    required: true
+    default: "<!-- sticky-comment: workflow=${{ github.workflow }} -->"
+runs:
+  using: "composite"
+  steps:
+    - name: Get existing comment
+      id: get_existing_comment
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        ISSUE_NUMBER: ${{ inputs.issue-number }}
+        MARKER: ${{ inputs.marker }}
+      run: |
+        COMMENT_ID="$(gh api \
+          "repo/$OWNER/$REPO/issues/$ISSUE_NUMBER/comments" \
+          --method GET \
+          --jq '.comments[] | select(.body | contains("$MARKER"))' | head -n 1)"
+
+        echo "comment_id=$COMMENT_ID" | "$GITHUB_OUTPUT"
+
+    - name: Construct Body
+      id: body
+      shell: bash
+      env:
+        BODY: ${{ inputs.body }}
+        MARKER: ${{ inputs.marker }}
+      run: echo "result=$BODY\n\n$MARKER" >> "$GITHUB_OUTPUT"
+
+    - if: steps.get_existing_comment.outputs.comment_id == ""
+      name: Create Comment
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        OWNER: ${{ inputs.owner }}
+        REPO: ${{ inputs.repo }}
+        ISSUE_NUMBER: ${{ inputs.issue-number }}
+        BODY: ${{ steps.body.outputs.result }}
+      run: |
+        gh api \
+          "repos/$OWNER/$REPO/issues/$ISSUE_NUMBER/comments" \
+          --method POST \
+          --raw-field body="$BODY" \
+          --jq '.id'
+
+    - if: steps.get_existing_comment.outputs.comment_id != ""
+      name: Update Comment
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        OWNER: ${{ inputs.owner }}
+        REPO: ${{ inputs.repo }}
+        COMMENT_ID: ${{ steps.get_existing_comment.outputs.comment_id }}
+        BODY: ${{ steps.body.outputs.result }}
+      run: |
+        gh api "repos/$OWNER/$REPO/issues/comments/$COMMENT_ID" \
+          --method PATCH \
+          --raw-field body="$BODY"

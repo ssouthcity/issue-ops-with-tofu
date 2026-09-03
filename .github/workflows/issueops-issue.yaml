@@ -52,7 +52,7 @@ jobs:
 
       - if: steps.validate.outputs.result == 'success'
         name: Notify Requester
-        uses: ./.github/actions/create-issue-comment
+        uses: ./.github/actions/sticky-comment
         with:
           body: |
             Hello! Your request has been validated successfully!
