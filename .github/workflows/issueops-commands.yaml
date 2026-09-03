@@ -61,7 +61,7 @@ jobs:
         name: Create branch
         id: create-branch
         env:
-          BUCKET_NAME: ${{ steps.parse.outputs.parsed_bucket_name }}
+          BUCKET_NAME: ${{ steps.parse.outputs.parsed_bucket-name }}
         run: |
           BRANCH="issueops/new-bucket-request/$BUCKET_NAME"
           git switch -c "$BRANCH"
@@ -70,7 +70,7 @@ jobs:
       - if: steps.command.outputs.continue == 'true'
         name: Scaffold code
         env:
-          BUCKET_NAME: ${{ steps.parse.outputs.parsed_bucket_name }}
+          BUCKET_NAME: ${{ steps.parse.outputs.parsed_bucket-name }}
         run: |
           UNIT_DIR="accounts/southcity/buckets/$BUCKET_NAME"
 
@@ -85,7 +85,7 @@ jobs:
       - if: steps.command.outputs.continue == 'true'
         name: Commit and push
         env:
-          BUCKET_NAME: ${{ steps.parse.outputs.parsed_bucket_name }}
+          BUCKET_NAME: ${{ steps.parse.outputs.parsed_bucket-name }}
           HEAD: ${{ steps.create-branch.outputs.name }}
           COMMIT_MESSAGE: |
             Scaffolded code for issue #${{ github.event.issue.number }}
@@ -100,7 +100,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           HEAD: ${{ steps.create-branch.outputs.name }}
           TITLE: |
-            [Request] New Bucket: ${{ steps.parse.outputs.parsed_bucket_name }}
+            [Request] New Bucket: ${{ steps.parse.outputs.parsed_bucket-name }}
           BODY: |
             Closes #${{ github.event.issue.number }}
         run: |
