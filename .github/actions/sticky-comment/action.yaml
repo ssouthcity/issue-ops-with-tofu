@@ -12,14 +12,10 @@ inputs:
     description: "GitHub token"
     required: true
     default: ${{ github.token }}
-  owner:
-    description: "Owner of the repo"
+  repository:
+    description: "Repository in the form of octocat/hello-world"
     required: true
-    default: ${{ github.event.repository.owner }}
-  repo:
-    description: "Name of the repo"
-    required: true
-    default: ${{ github.event.repository.name }}
+    default: ${{ github.repository }}
   marker:
     description: "HTML comment used to identity the comment when updating"
     required: true
@@ -36,10 +32,11 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.token }}
+        REPOSITORY: ${{ inputs.repository }}
         ISSUE_NUMBER: ${{ inputs.issue-number }}
         MARKER: ${{ inputs.marker }}
       run: |
-        COMMENT_ID="$(gh api "repos/$OWNER/$REPO/issues/$ISSUE_NUMBER/comments" \
+        COMMENT_ID="$(gh api "repos/$REPOSITORY/issues/$ISSUE_NUMBER/comments" \
           --method GET \
           --jq '.[] | select(.body | contains(env.MARKER)) | .id' | head -n 1)"
 
@@ -64,12 +61,11 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.token }}
-        OWNER: ${{ inputs.owner }}
-        REPO: ${{ inputs.repo }}
+        REPOSITORY: ${{ inputs.repository }}
         ISSUE_NUMBER: ${{ inputs.issue-number }}
         BODY: ${{ steps.body.outputs.result }}
       run: |
-        COMMENT_ID="$(gh api "repos/$OWNER/$REPO/issues/$ISSUE_NUMBER/comments" \
+        COMMENT_ID="$(gh api "repos/$REPOSITORY/issues/$ISSUE_NUMBER/comments" \
           --method POST \
           --raw-field body="$BODY" \
           --jq '.id')"
@@ -82,12 +78,11 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.token }}
-        OWNER: ${{ inputs.owner }}
-        REPO: ${{ inputs.repo }}
+        REPOSITORY: ${{ inputs.repository }}
         COMMENT_ID: ${{ steps.get_existing_comment.outputs.comment_id }}
         BODY: ${{ steps.body.outputs.result }}
       run: |
-        COMMENT_ID="$(gh api "repos/$OWNER/$REPO/issues/comments/$COMMENT_ID" \
+        COMMENT_ID="$(gh api "repos/$REPOSITORY/issues/comments/$COMMENT_ID" \
           --method PATCH \
           --raw-field body="$BODY" \
           --jq '.id')"
