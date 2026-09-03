@@ -4,7 +4,7 @@ title: "[Request] New Bucket: NAME"
 labels:
   - issueops:new-bucket
 projects:
-  - IssueOps
+  - ssouthcity/3
 body:
   - type: markdown
     attributes:
