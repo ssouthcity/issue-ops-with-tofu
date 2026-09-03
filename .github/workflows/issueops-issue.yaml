@@ -51,10 +51,19 @@ jobs:
             issueops:validated
 
       - if: steps.validate.outputs.result == 'success'
-        name: Notify Requester
+        name: Notify Requester (Success)
         uses: ./.github/actions/sticky-comment
         with:
           body: |
             Hello! Your request has been validated successfully!
 
             Please comment with `.submit` to submit this request.
+
+      - if: steps.validate.outputs.result != 'success'
+        name: Notify Requester (Failure)
+        uses: ./.github/actions/sticky-comment
+        with:
+          body: |
+            There were errors in your request.
+
+            Please edit the issue manually to resolve the conflict.
