@@ -15,11 +15,11 @@ inputs:
   owner:
     description: "Owner of the repo"
     required: true
-    default: ${{ github.context.repo.owner }}
+    default: ${{ github.event.repository.owner }}
   repo:
     description: "Name of the repo"
     required: true
-    default: ${{ github.context.repo.repo }}
+    default: ${{ github.event.repository.name }}
   marker:
     description: "HTML comment used to identity the comment when updating"
     required: true
@@ -39,12 +39,11 @@ runs:
         ISSUE_NUMBER: ${{ inputs.issue-number }}
         MARKER: ${{ inputs.marker }}
       run: |
-        COMMENT_ID="$(gh api \
-          "repo/$OWNER/$REPO/issues/$ISSUE_NUMBER/comments" \
+        COMMENT_ID="$(gh api "repos/$OWNER/$REPO/issues/$ISSUE_NUMBER/comments" \
           --method GET \
-          --jq '.comments[] | select(.body | contains("$MARKER"))' | head -n 1)"
+          --jq '.[] | select(.body | contains(env.MARKER)) | .id' | head -n 1)"
 
-        echo "comment_id=$COMMENT_ID" | "$GITHUB_OUTPUT"
+        echo "comment_id=$COMMENT_ID" >> "$GITHUB_OUTPUT"
 
     - name: Construct Body
       id: body
@@ -52,7 +51,12 @@ runs:
       env:
         BODY: ${{ inputs.body }}
         MARKER: ${{ inputs.marker }}
-      run: echo "result=$BODY\n\n$MARKER" >> "$GITHUB_OUTPUT"
+      run: |
+        {
+          echo 'result=EOF'
+          printf '%s\n\n%s\n' "$MARKER" "$BODY"
+          echo 'EOF'
+        } >> "$GITHUB_OUTPUT"
 
     - if: ${{ steps.get_existing_comment.outputs.comment_id == "" }}
       id: create_comment
@@ -65,11 +69,12 @@ runs:
         ISSUE_NUMBER: ${{ inputs.issue-number }}
         BODY: ${{ steps.body.outputs.result }}
       run: |
-        gh api \
-          "repos/$OWNER/$REPO/issues/$ISSUE_NUMBER/comments" \
+        COMMENT_ID="$(gh api "repos/$OWNER/$REPO/issues/$ISSUE_NUMBER/comments" \
           --method POST \
           --raw-field body="$BODY" \
-          --jq '.id'
+          --jq '.id')"
+
+        echo "comment_id=$COMMENT_ID" >> "$GITHUB_OUTPUT"
 
     - if: ${{ steps.get_existing_comment.outputs.comment_id != "" }}
       id: update_comment
@@ -82,6 +87,9 @@ runs:
         COMMENT_ID: ${{ steps.get_existing_comment.outputs.comment_id }}
         BODY: ${{ steps.body.outputs.result }}
       run: |
-        gh api "repos/$OWNER/$REPO/issues/comments/$COMMENT_ID" \
+        COMMENT_ID="$(gh api "repos/$OWNER/$REPO/issues/comments/$COMMENT_ID" \
           --method PATCH \
-          --raw-field body="$BODY"
+          --raw-field body="$BODY" \
+          --jq '.id')"
+
+        echo "comment_id=$COMMENT_ID" >> "$GITHUB_OUTPUT"
