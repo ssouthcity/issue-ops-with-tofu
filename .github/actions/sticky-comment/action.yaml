@@ -42,19 +42,6 @@ runs:
 
         echo "comment_id=$COMMENT_ID" >> "$GITHUB_OUTPUT"
 
-    - name: Construct Body
-      id: body
-      shell: bash
-      env:
-        BODY: ${{ inputs.body }}
-        MARKER: ${{ inputs.marker }}
-      run: |
-        {
-          echo 'result=EOF'
-          printf '%s\n\n%s\n' "$MARKER" "$BODY"
-          echo 'EOF'
-        } >> "$GITHUB_OUTPUT"
-
     - if: steps.get_existing_comment.outputs.comment_id == ''
       id: create_comment
       name: Create Comment
@@ -63,11 +50,12 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
         REPOSITORY: ${{ inputs.repository }}
         ISSUE_NUMBER: ${{ inputs.issue-number }}
-        BODY: ${{ steps.body.outputs.result }}
+        BODY: ${{ inputs.body }}
+        MARKER: ${{ inputs.marker }}
       run: |
         COMMENT_ID="$(gh api "repos/$REPOSITORY/issues/$ISSUE_NUMBER/comments" \
           --method POST \
-          --raw-field body="$BODY" \
+          --raw-field body="$MARKER\n\n$BODY" \
           --jq '.id')"
 
         echo "comment_id=$COMMENT_ID" >> "$GITHUB_OUTPUT"
@@ -80,11 +68,12 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
         REPOSITORY: ${{ inputs.repository }}
         COMMENT_ID: ${{ steps.get_existing_comment.outputs.comment_id }}
-        BODY: ${{ steps.body.outputs.result }}
+        BODY: ${{ inputs.body }}
+        MARKER: ${{ inputs.marker }}
       run: |
         COMMENT_ID="$(gh api "repos/$REPOSITORY/issues/comments/$COMMENT_ID" \
           --method PATCH \
-          --raw-field body="$BODY" \
+          --raw-field body="$MARKER\n\n$BODY" \
           --jq '.id')"
 
         echo "comment_id=$COMMENT_ID" >> "$GITHUB_OUTPUT"
