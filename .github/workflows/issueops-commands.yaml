@@ -27,13 +27,10 @@ jobs:
 
       - if: steps.command.outputs.continue == 'true' && !contains(github.event.issue.labels.*.name, 'issueops:validated')
         name: Notify Requester (error)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-          COMMENT_BODY: |
+        uses: ./.github/actions/create-issue-comment
+        with:
+          body: |
             The request contains errors, please fix them before submitting.
-        run: |
-          gh issue comment "$ISSUE_NUMBER" --body "$COMMENT_BODY"
 
       - if: steps.command.outputs.continue == 'true' && !contains(github.event.issue.labels.*.name, 'issueops:validated')
         name: Cancel flow

@@ -1,0 +1,25 @@
+name: "Create Issue Comment"
+description: "Create a comment on a GitHub issue or PR"
+inputs:
+  issue-number:
+    description: "ID of the issue to comment on"
+    required: true
+    default: ${{ github.event.issue.number }}
+  body:
+    description: "Comment body"
+    required: true
+  token:
+    description: "GitHub token"
+    required: true
+    default: ${{ github.token }}
+runs:
+  using: "composite"
+  steps:
+    - name: Comment
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        ISSUE_NUMBER: ${{ inputs.issue-number }}
+        BODY: ${{ inputs.body }}
+      run: |
+        gh issue comment "$ISSUE_NUMBER" --body "$BODY"
