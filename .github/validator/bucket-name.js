@@ -6,8 +6,6 @@
  * @returns {Promise<string>} An error message or `"success"`
  */
 export default async (field) => {
-  const core = await import("@actions/core");
-
   if (typeof field !== "string") {
     return "Field type is not supported by validator";
   }
