@@ -21,6 +21,10 @@ jobs:
           command: .submit
           allowed_contexts: issue
 
+      - if: steps.command.outputs.continue == 'true'
+        name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
       - if: steps.command.outputs.continue == 'true' && !contains(github.event.issue.labels.*.name, 'issueops:validated')
         name: Notify Requester (error)
         env:
@@ -34,10 +38,6 @@ jobs:
       - if: steps.command.outputs.continue == 'true' && !contains(github.event.issue.labels.*.name, 'issueops:validated')
         name: Cancel flow
         run: exit 1
-
-      - if: steps.command.outputs.continue == 'true'
-        name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - if: steps.command.outputs.continue == 'true'
         uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
