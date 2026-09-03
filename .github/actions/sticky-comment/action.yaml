@@ -1,13 +1,13 @@
 name: "Sticky Comment"
 description: "Create or update a comment on a GitHub issue or PR"
 inputs:
+  body:
+    description: "Comment body"
+    required: true
   issue-number:
     description: "ID of the issue to comment on"
     required: true
     default: ${{ github.event.issue.number }}
-  body:
-    description: "Comment body"
-    required: true
   token:
     description: "GitHub token"
     required: true
@@ -53,9 +53,11 @@ runs:
         BODY: ${{ inputs.body }}
         MARKER: ${{ inputs.marker }}
       run: |
+        FULL_BODY="$(printf '%s\n\n%s' "$MARKER" "$BODY")"
+
         COMMENT_ID="$(gh api "repos/$REPOSITORY/issues/$ISSUE_NUMBER/comments" \
           --method POST \
-          --raw-field body="$MARKER\n\n$BODY" \
+          --raw-field body="$FULL_BODY" \
           --jq '.id')"
 
         echo "comment_id=$COMMENT_ID" >> "$GITHUB_OUTPUT"
@@ -71,9 +73,11 @@ runs:
         BODY: ${{ inputs.body }}
         MARKER: ${{ inputs.marker }}
       run: |
+        FULL_BODY="$(printf '%s\n\n%s' "$MARKER" "$BODY")"
+
         COMMENT_ID="$(gh api "repos/$REPOSITORY/issues/comments/$COMMENT_ID" \
           --method PATCH \
-          --raw-field body="$MARKER\n\n$BODY" \
+          --raw-field body="$FULL_BODY" \
           --jq '.id')"
 
         echo "comment_id=$COMMENT_ID" >> "$GITHUB_OUTPUT"
