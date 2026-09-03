@@ -58,7 +58,7 @@ runs:
           echo 'EOF'
         } >> "$GITHUB_OUTPUT"
 
-    - if: ${{ steps.get_existing_comment.outputs.comment_id == "" }}
+    - if: steps.get_existing_comment.outputs.comment_id == ''
       id: create_comment
       name: Create Comment
       shell: bash
@@ -76,7 +76,7 @@ runs:
 
         echo "comment_id=$COMMENT_ID" >> "$GITHUB_OUTPUT"
 
-    - if: ${{ steps.get_existing_comment.outputs.comment_id != "" }}
+    - if: steps.get_existing_comment.outputs.comment_id != ''
       id: update_comment
       name: Update Comment
       shell: bash
