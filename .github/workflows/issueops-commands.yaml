@@ -14,6 +14,10 @@ jobs:
   new-bucket-request-submit:
     name: New Bucket Request Submit
     runs-on: ubuntu-latest
+    if: |
+      contains(github.event.issue.labels.*.name, 'issueops:new-bucket') &&
+      contains(github.event.issue.labels.*.name, 'issueops:validated') &&
+      contains(github.event.comment.body, '.submit')
     steps:
       - uses: github/command@3442f3fa1efe01bdb024b157083c337902d17372 # v2.0.3
         id: command
