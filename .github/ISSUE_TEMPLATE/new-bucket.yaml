@@ -8,7 +8,7 @@ body:
     attributes:
       value: This is the form for ordering the creation of a bucket.
   - type: input
-    id: bucket_name
+    id: bucket-name
     attributes:
       label: Bucket Name
       description: The name of the bucket.

@@ -1,0 +1,3 @@
+validators:
+  - field: bucket-name
+    script: bucket-name.js
