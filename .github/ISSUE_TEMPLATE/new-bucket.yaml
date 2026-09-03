@@ -3,6 +3,8 @@ description: Submit an request for a new bucket.
 title: "[Request] New Bucket: NAME"
 labels:
   - issueops:new-bucket
+projects:
+  - IssueOps
 body:
   - type: markdown
     attributes:
