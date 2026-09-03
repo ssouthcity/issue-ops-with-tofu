@@ -66,4 +66,4 @@ jobs:
           body: |
             There were errors in your request.
 
-            Please edit the issue manually to resolve the conflict.
+            Please review the comment above and edit the issue to resolve the conflict.

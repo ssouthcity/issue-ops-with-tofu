@@ -27,10 +27,12 @@ jobs:
 
       - if: steps.command.outputs.continue == 'true' && !contains(github.event.issue.labels.*.name, 'issueops:validated')
         name: Notify Requester (error)
-        uses: ./.github/actions/create-issue-comment
+        uses: ./.github/actions/sticky-comment
         with:
           body: |
-            The request contains errors, please fix them before submitting.
+            Your request is not ready for submittal.
+
+            Please review the comments above and resolve the errors.
 
       - if: steps.command.outputs.continue == 'true' && !contains(github.event.issue.labels.*.name, 'issueops:validated')
         name: Cancel flow

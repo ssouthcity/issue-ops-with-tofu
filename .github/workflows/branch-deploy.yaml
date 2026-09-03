@@ -28,6 +28,10 @@ jobs:
         uses: github/branch-deploy@f0984057ffe1aa340aa017b6eafb894310aed88e # v12.0.0
         with:
           environment: live
+          reaction: rocket
+          trigger: .apply
+          noop_trigger: .plan
+          sticky_locks: true
 
       - name: Checkout
         if: steps.branch-deploy.outputs.continue == 'true'
