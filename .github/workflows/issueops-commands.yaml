@@ -78,8 +78,8 @@ jobs:
             --output-folder "$UNIT_DIR" \
             --non-interactive
 
-          cat <<-EOF > "$UNIT_DIR/terragrunt.values.hcl"
-            name = "$BUCKET_NAME"
+          cat <<EOF > "$UNIT_DIR/terragrunt.values.hcl"
+          name = "$BUCKET_NAME"
           EOF
 
       - if: steps.command.outputs.continue == 'true'
