@@ -25,7 +25,7 @@ jobs:
     steps:
       - name: branch-deploy
         id: branch-deploy
-        uses: github/branch-deploy@f0984057ffe1aa340aa017b6eafb894310aed88e # v12.0.0
+        uses: github/branch-deploy@97edad089bbbe0c0ad13db7bf9ac085eaa47e255 # v12.0.1
         with:
           environment: live
           reaction: rocket
